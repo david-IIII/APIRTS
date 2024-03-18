@@ -1,0 +1,776 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AT-RTS",
+    "contact": {
+      "email": "info@at-ls.com",
+      "name": "RTS INFO"
+    },
+    "version": "5.6.0",
+    "description": "AT-RTS (Remote Translation Service) es la API web que facilita la integración de nuestros servicios de traducción con los sistemas de nuestros clientes, permitiendo gestionar desde estos el control de todo el proceso de traducción de contenidos."
+  },
+  "servers": [
+    {
+      "url": "https://rts.at-ls.com/atrts",
+      "description": "Main (production) server"
+    },
+    {
+      "url": "http://servicios.at.int/atrts",
+      "description": "Old (production) server"
+    },
+    {
+      "url": "http://rtspre.at.int/restapi",
+      "description": "Preproducción server"
+    },
+    {
+      "url": "http://rtsdev.at.int/restapi",
+      "description": "Entorno de desarrollo server"
+    }
+  ],
+  "paths": {
+    "/ping": {
+      "get": {
+        "tags": ["restapi"],
+        "summary": "ping",
+        "description": "Descripción :: Método concebido para el chequeo y validación de buen funcionamiento del mismo.",
+        "operationId": "ping",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {}
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {}
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/translateSynchronous": {
+      "post": {
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "tags": ["restapi"],
+        "summary": "translateSynchronous",
+        "description": "Descripción :: Petición de traducción síncrona. Se trata de traducción automática y se devuelve al momento en la misma petición.",
+        "operationId": "translateSynchronous",
+        "parameters": [],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/translateSync"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/outFile"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ExceedLimitError"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/translateAsynchronous": {
+      "post": {
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "tags": ["restapi"],
+        "summary": "translateAsynchronous",
+        "description": "Descripción :: Se envía el documento a traducir y se devuelve un token para la reclamación posterior del documento.",
+        "operationId": "translateAsynchronous",
+        "parameters": [],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/translateAsync"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/outToken"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ExceedLimitError"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/getFileByToken": {
+      "post": {
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "tags": ["restapi"],
+        "summary": "getFileByToken",
+        "description": "Descripción :: Corresponde a un envío previo realizado con una llamada \"translateAsynchronous\".",
+        "operationId": "getFileByToken",
+        "parameters": [],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/getFileByToken"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/outFile"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ExceedLimitError"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/delFileByToken": {
+      "post": {
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "tags": ["restapi"],
+        "summary": "Eliminar documento",
+        "description": "Descripción :: Eliminar un documento enviado previamente por \"translateAsynchronous\"",
+        "operationId": "delFileByToken",
+        "parameters": [],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/delFileByToken"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/outFile"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ExceedLimitError"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/getList": {
+      "post": {
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "tags": ["restapi"],
+        "summary": "getList",
+        "description": "Descripción :: Devuelve la lista del estado de peticiones asíncronas de traducción",
+        "operationId": "getList",
+        "parameters": [],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/getList"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/outList"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ExceedLimitError"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/registryStatistic": {
+      "post": {
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ],
+        "tags": ["restapi"],
+        "summary": "registryStatistic",
+        "description": "Descripción :: Almacena estadísticas de pedidos",
+        "operationId": "registryStatistic",
+        "parameters": [],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/registryStatistic"
+        },
+        "responses": {
+          "default": {
+            "$ref": "#/components/responses/GenericError"
+          },
+          "200": {
+            "$ref": "#/components/responses/outToken"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ExceedLimitError"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "integer"
+          },
+          "errorDescription": {
+            "type": "string"
+          }
+        }
+      },
+      "OutToken": {
+        "description": "Retorno de token",
+        "type": "object",
+        "properties": {
+          "error": {
+            "allOf": [{ "$ref": "#/components/schemas/ErrorResponse" }]
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "OutFile": {
+        "description": "Retorno de archivo",
+        "type": "object",
+        "properties": {
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            ]
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "base64": {
+            "type": "string",
+            "nullable": true
+          },
+          "wordCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "OutList": {
+        "description": "Retorno de lista de archivo",
+        "type": "object",
+        "properties": {
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorResponse"
+              }
+            ]
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "base64": {
+            "type": "string",
+            "nullable": true
+          },
+          "wordCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "responses": {
+      "GenericError": {
+        "description": "An error occurred.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "UnauthorizedError": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "errorCode": 401,
+                "errorDescription": "Usuario no autorizado"
+              }
+            }
+          }
+        }
+      },
+      "ExceedLimitError": {
+        "description": "Too Many Requests. Exceeded the rate limit for requests.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "errorCode": 403,
+              "errorDescription": "El número de peticiones para traducir excede el límite permitido"
+            }
+          }
+        }
+      },
+      "MethodNotAllowed": {
+        "description": "Method Not Allowed"
+      },
+      "ServiceError": {
+        "description": "Method Not Allowed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "errorCode": 503,
+                "errorDescription": "Service unavaiable"
+              }
+            }
+          }
+        }
+      },
+      "outToken": {
+        "description": "Devolución de token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OutToken"
+            },
+            "example": {
+              "error": {
+                "errorCode": 0,
+                "errorDescription": null
+              },
+              "fileName": "holaRTS.txt",
+              "token": "c5ec153d-088d-42e6-9255-d1126e2574cd"
+            }
+          }
+        }
+      },
+      "outFile": {
+        "description": "Devolución de fichero",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OutFile"
+            },
+            "example": {
+              "error": {
+                "errorCode": 0,
+                "errorDescription": null
+              },
+              "status": 30,
+              "fileName": "FitxerPetitSiRepetitsDev.txt",
+              "base64": "Qm9uIGRpYS4NCkF2dWkgZmEgdW4gZGlhIG1vbHQgYXNzb2xlbGxhdC4NCkEgbGEgbml0IGhhIHBsb2d1dC4NCkEgbGEgbml0IGhhIHBsb2d1dC4NCkVsIGNvdHhlIMOpcyB2ZXJtZWxsIGkgbSdhZ3JhZGENCkVsIGNvdHhlIMOpcyB2ZXJtZWxsIGkgbSdhZ3JhZGENCkNvbmZpZ3VyYWNpw7MgZGVsIGZvcm1hdCBlbiBPdXRsb29rIDIwMDc=",
+              "wordCount": 38
+            }
+          }
+        }
+      },
+      "outList": {
+        "description": "Devolución de token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [{ "$ref": "#/components/schemas/OutList" }]
+            },
+            "example": {
+              "error": {
+                "errorCode": 0,
+                "errorDescription": null
+              },
+              "fileName": "holaRTS.txt",
+              "token": "c5ec153d-088d-42e6-9255-d1126e2574cd"
+            }
+          }
+        }
+      }
+    },
+    "requestBodies": {
+      "translateSync": {
+        "description": "Ejemplo de traducción automatica sincrona",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "title": "TradSync",
+              "type": "object",
+              "required": [
+                "projectid",
+                "sourcelang",
+                "targetlang",
+                "filename",
+                "base64"
+              ],
+              "properties": {
+                "projectid": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "sourcelang": {
+                  "type": "string"
+                },
+                "targetlang": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                },
+                "base64": {
+                  "type": "string"
+                },
+                "encoding": {
+                  "type": "string"
+                },
+                "options": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "translateAsync": {
+        "description": "Ejemplo de traducción revisada",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "title": "TradAsync",
+              "type": "object",
+              "required": [
+                "projectid",
+                "sourcelang",
+                "targetlang",
+                "filename",
+                "base64"
+              ],
+              "properties": {
+                "projectid": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "sourcelang": {
+                  "type": "string"
+                },
+                "targetlang": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                },
+                "base64": {
+                  "type": "string"
+                },
+                "encoding": {
+                  "type": "string"
+                },
+                "callbackurl": {
+                  "type": "string"
+                },
+                "errnotifiersendto": {
+                  "type": "string"
+                },
+                "options": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "getFileByToken": {
+        "description": "Ejemplo de petición de fichero revisado",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "title": "getFileByToken",
+              "required": ["projectid", "token"],
+              "type": "object",
+              "properties": {
+                "projectid": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "token": {
+                  "type": "string"
+                },
+                "options": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delFileByToken": {
+        "description": "Información de documento a eliminar",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "projectid": {
+                  "type": "integer",
+                  "format": "int32",
+                  "example": 98
+                },
+                "token": {
+                  "type": "string",
+                  "maxLength": 70,
+                  "example": "7@+cOnoXwN9MF2YWtmgDkp70zTrzRBfN4ekuBaAg9ghS7LSlnS7NpAJAu5JtcziN70"
+                },
+                "options": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": true
+      },
+      "getList": {
+        "description": "Información de documento a eliminar",
+        "content": {
+          "application/json": {
+            "schema": {
+              "title": "getList",
+              "required": [
+                "projectid",
+                "sourcelang",
+                "targetlang",
+                "datecutoff",
+                "options"
+              ],
+              "type": "object",
+              "properties": {
+                "projectid": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "sourcelang": {
+                  "type": "string"
+                },
+                "targetlang": {
+                  "type": "string"
+                },
+                "datecutoff": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "options": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "registryStatistic": {
+        "description": "Información de documento a eliminar",
+        "content": {
+          "application/json": {
+            "schema": {
+              "required": [
+                "projectid",
+                "orderid",
+                "sourcelang",
+                "targetlang",
+                "filename",
+                "wordcount",
+                "options"
+              ],
+              "type": "object",
+              "properties": {
+                "projectid": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "orderid": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "sourcelang": {
+                  "type": "string"
+                },
+                "targetlang": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                },
+                "wordcount": {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                "options": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "restapi",
+      "description": "Access to Endpoint"
+    }
+  ]
+}
