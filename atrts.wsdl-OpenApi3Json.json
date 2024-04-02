@@ -7,24 +7,61 @@
       "name": "RTS INFO"
     },
     "version": "5.6.0",
-    "description": "AT-RTS (Remote Translation Service) es la API web que facilita la integración de nuestros servicios de traducción con los sistemas de nuestros clientes, permitiendo gestionar desde estos el control de todo el proceso de traducción de contenidos."
+    "description": "AT-RTS (Remote Translation Service) es la API web que facilita la integración de nuestros servicios de traducción con los sistemas de nuestros clientes, permitiendo gestionar desde estos el control de todo el proceso de traducción de contenidos.<br/>La API web, basada en servicio web SOAP, dispone de interoperabilidad REST desde la versión 5.3.0.<br/>Las funcionalidades operacionales son:<ul><li><b>Control de vida</b>: control servicio activo.</li><li><b>Traducción síncrona</b>: peticiones síncronas de órdenes de traducción automática (no humana).</li><li><b>Traducción asíncrona</b>: peticiones asíncronas de órdenes de traducción profesional especializada.<br/>Cada petición retorna un token, asociado a la petición de traducción, cuya finalidad es identificar de forma única dicha petición de trabajo para que su traducción correspondiente pueda ser solicitada en un futuro una vez finalizada la revisión.<br/>Cabe recalcar que las peticiones de traducción asíncronas disponen de la posibilidad de indicar una URL de retorno callback que implica activar un servicio de notificación de traducción finalizada para que nuestros clientes puedan automatizar el proceso de descarga de peticiones finalizadas.<br/>En resumen, en este caso AT entrega las peticiones directamente a los sistemas de nuestros clientes para que estos los ubiquen en sus subsistemas.<br/>Conceptualmente, en ATLS Global S.L. garantizamos el retorno de las traducciones de peticiones de órdenes asíncronas a las infraestructuras de nuestros clientes, teniendo en cuenta que, si el sistema de comunicación falla repetidamente durante un cierto número de ocasiones por cualquier motivo, se enviaría un correo electrónico de aviso a la cuenta de correo que el cliente haya especificado durante la solicitud de la petición.</li><li><b>Petición de retorno de traducción</b>: petición para obtener una orden de traducción profesional a partir de un token generado por la petición de traducción asíncrona. Si la orden no está finalizada, retorna la información del estado del documento.</li><li><b>Petición de cancelación de una traducción</b>: petición de cancelación de solicitudes de traducción asíncrona previas por token no iniciadas. En este caso, los sistemas de ATLS Global S.L. validarán que el token indicado no haya iniciado el proceso de traducción; en caso de no haberse iniciado, se cancelará la solicitud.</li<li><b>Listado de peticiones</b>: petición de estado y consumo de órdenes de traducción a partir de fecha de corte, detallando la siguiente información:<ul><li>projectid: identificador de proyecto AT contratado</li><li>token: token de petición</li><li>sourcelang: idioma origen</li><li>targetlang: idioma destino</li>filename: nombre del archivo asociado a petición</li><li>wordcount: número de palabras</li><li>status: estado de la traducción<ul><li>10: En revisión</li><li>20: Listo y pendiente de entregar</li><li>30: Entregado</li><li>40: Cancelado y eliminado</li><li>50: Entrega caducada</li><li>90: Error de entrada documental</li><li>100: Error de procesamiento</li></ul></li><li>urlcallback: (opcional) URL de retorno de traducción finalizada</li><li>errnotifiersendto (opcional): e-mail de notificación de error en el retorno de la traducción</li><li>dateinsert: fecha de alta</li><li>type: tipo de traducción, SÍNCRONO O ASÍNCRONO</li></ul></li></ul>",
+    "x-server-configuration": {
+      "default-environment": "Production",
+      "default-server": "default",
+      "environments": [
+        {
+          "name": "Production",
+          "description": "Main (production) server",
+          "servers": [
+            {
+              "name": "default",
+              "url": "https://rts.at-ls.com/atrts"
+            }
+          ]
+        },
+        {
+          "name": "Preproduction",
+          "description": "Preproduction server",
+          "servers": [
+            {
+              "name": "default",
+              "url": "http://rtspre.at.int/restapi"
+            }
+          ]
+        },
+        {
+          "name": "Development",
+          "description": "Development server",
+          "servers": [
+            {
+              "name": "default",
+              "url": "http://rtsdev.at.int/restapi"
+            }
+          ]
+        }
+      ],
+      "parameters": []
+    },
+    "x-image-uri": ""
   },
   "servers": [
     {
       "url": "https://rts.at-ls.com/atrts",
-      "description": "Main (production) server"
-    },
-    {
-      "url": "http://servicios.at.int/atrts",
-      "description": "Old (production) server"
+      "description": "Main (production) server",
+      "variables": {}
     },
     {
       "url": "http://rtspre.at.int/restapi",
-      "description": "Preproducción server"
+      "description": "Preproduction server",
+      "variables": {}
     },
     {
       "url": "http://rtsdev.at.int/restapi",
-      "description": "Entorno de desarrollo server"
+      "description": "Development server",
+      "variables": {}
     }
   ],
   "paths": {
@@ -32,19 +69,21 @@
       "get": {
         "tags": ["restapi"],
         "summary": "ping",
-        "description": "Descripción :: Método concebido para el chequeo y validación de buen funcionamiento del mismo.",
+        "description": "Método concebido para el chequeo y validación de buen funcionamiento del servicio contratado.",
         "operationId": "ping",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {}
+            "$ref": "#/components/responses/outPing"
           },
           "400": {
             "description": "Bad Request",
+            "headers": {},
             "content": {}
           },
           "500": {
             "description": "Internal Server Error",
+            "headers": {},
             "content": {}
           },
           "503": {
@@ -56,14 +95,9 @@
     },
     "/translateSynchronous": {
       "post": {
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ],
         "tags": ["restapi"],
         "summary": "translateSynchronous",
-        "description": "Descripción :: Petición de traducción síncrona. Se trata de traducción automática y se devuelve al momento en la misma petición.",
+        "description": "Petición de orden de traducción síncrona (traducción automática no humana).\nTras la petición, el servicio retorna el archivo traducido al idioma destino especificado.",
         "operationId": "translateSynchronous",
         "parameters": [],
         "requestBody": {
@@ -75,6 +109,7 @@
           },
           "400": {
             "description": "Bad Request",
+            "headers": {},
             "content": {}
           },
           "401": {
@@ -88,25 +123,29 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "headers": {},
             "content": {}
           },
           "503": {
             "$ref": "#/components/responses/ServiceError"
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BasicAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          }
+        ]
       }
     },
     "/translateAsynchronous": {
       "post": {
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ],
         "tags": ["restapi"],
         "summary": "translateAsynchronous",
-        "description": "Descripción :: Se envía el documento a traducir y se devuelve un token para la reclamación posterior del documento.",
+        "description": "Se genera una petición de traducción asíncrona, es decir, una revisión de una traducción llevada a cabo por un profesional de la división de lingüistas de ATLS Global S.L.",
         "operationId": "translateAsynchronous",
         "parameters": [],
         "requestBody": {
@@ -118,6 +157,7 @@
           },
           "400": {
             "description": "Bad Request",
+            "headers": {},
             "content": {}
           },
           "401": {
@@ -131,25 +171,29 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "headers": {},
             "content": {}
           },
           "503": {
             "$ref": "#/components/responses/ServiceError"
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BasicAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          }
+        ]
       }
     },
     "/getFileByToken": {
       "post": {
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ],
         "tags": ["restapi"],
         "summary": "getFileByToken",
-        "description": "Descripción :: Corresponde a un envío previo realizado con una llamada \"translateAsynchronous\".",
+        "description": "Método concebido exclusivamente para la solicitud del resultado de las peticiones de traducciones asíncronas a través de un token único (generado en la petición de traducción asíncrona).La clave <b>status</b> indica el estado de la traducción. Los posibles valores para traducciones asíncronas son:<ul><li>10: En revisión</li><li>20: Listo y pendiente de entregar</li><li>30: Entregado</li><li>40: Eliminado</li><li>50: Entrega caducada</li><li>90: Error de entrada documental</li><li>100: Error de procesamiento</li><ul>La clave <b>filename</b> indica el nombre del fichero, la clave base64 indica el contenido del fichero en base64 si la solicitud se encuentra en estado 30 (entregado) y la clave wordcount indica el número de palabras del fichero traducidas.",
         "operationId": "getFileByToken",
         "parameters": [],
         "requestBody": {
@@ -161,6 +205,7 @@
           },
           "400": {
             "description": "Bad Request",
+            "headers": {},
             "content": {}
           },
           "401": {
@@ -174,25 +219,109 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "headers": {},
             "content": {}
           },
           "503": {
             "$ref": "#/components/responses/ServiceError"
           }
         },
-        "deprecated": false
+        "deprecated": false,
+        "security": [
+          {
+            "BasicAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": ["restapi"],
+        "summary": "getFileByToken",
+        "description": "Método concebido exclusivamente para la solicitud del resultado de las peticiones de traducciones asíncronas a través de un token único (generado en la petición de traducción asíncrona). Método concebido exclusivamente para la solicitud del resultado de las peticiones de traducciones asíncronas a través de un token único (generado en la petición de traducción asíncrona). Para que el funcionamiento de este método sea correcto en caso de realizar una petición de tipo GET, el token debe ir codificado en formato URL.La clave <b>status</b> indica el estado de la traducción. Los posibles valores para traducciones asíncronas son:<ul><li>10: En revisión</li><li>20: Listo y pendiente de entregar</li><li>30: Entregado</li><li>40: Eliminado</li><li>50: Entrega caducada</li><li>90: Error de entrada documental</li><li>100: Error de procesamiento</li><ul>La clave <b>filename</b> indica el nombre del fichero, la clave base64 indica el contenido del fichero en base64 si la solicitud se encuentra en estado 30 (entregado) y la clave wordcount indica el número de palabras del fichero traducidas.",
+        "operationId": "GetgetFileByToken",
+        "parameters": [
+          {
+            "name": "projectid",
+            "in": "query",
+            "description": "Identificador de proyecto de traducción.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 98
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "Token resultado de la petición de traducción asíncrona.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "c5ec153d-088d-42e6-9255-d1126e2574cd"
+            }
+          },
+          {
+            "name": "options",
+            "in": "query",
+            "description": "JSON opciones auxiliares.",
+            "style": "form",
+            "explode": true,
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/outFile"
+          },
+          "400": {
+            "description": "Bad Request",
+            "headers": {},
+            "content": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ExceedLimitError"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "headers": {},
+            "content": {}
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceError"
+          }
+        },
+        "deprecated": false,
+        "security": [
+          {
+            "BasicAuth": []
+          },
+          {
+            "ApiKeyAuth": []
+          }
+        ]
       }
     },
     "/delFileByToken": {
       "post": {
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ],
         "tags": ["restapi"],
-        "summary": "Eliminar documento",
-        "description": "Descripción :: Eliminar un documento enviado previamente por \"translateAsynchronous\"",
+        "summary": "delFileByToken",
+        "description": "Método concebido exclusivamente para cancelar una solicitud de traducción asíncrona a través de un token único (generado en la petición de traducción asíncrona). Una solicitud solo se podrá cancelar si no se ha empezado a procesar.La clave <b>status</b> indica el estado de la traducción. Los posibles valores para traducciones asíncronas son:<ul><li>10: En revisión</li><li>20: Listo y pendiente de entregar</li><li>30: Entregado</li><li>40: Eliminado</li><li>50: Entrega caducada</li><li>90: Error de entrada documental</li><li>100: Error de procesamiento</li><ul>La clave <b>filename</b> indica el nombre del fichero, la clave base64 indica el contenido del fichero en base64 si la solicitud se encuentra en estado 30 (entregado) y la clave wordcount indica el número de palabras del fichero traducidas. Si el documento ya ha sido eliminado, el campo errorCode contendrá el valor 404. Si el documento no se puede eliminar porque la traducción ya ha sido iniciado, el campo errorCode contendrá el valor 403.",
         "operationId": "delFileByToken",
         "parameters": [],
         "requestBody": {
@@ -204,6 +333,7 @@
           },
           "400": {
             "description": "Bad Request",
+            "headers": {},
             "content": {}
           },
           "401": {
@@ -214,36 +344,98 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "headers": {},
             "content": {}
           },
           "503": {
             "$ref": "#/components/responses/ServiceError"
           }
         },
-        "deprecated": false
-      }
-    },
-    "/getList": {
-      "post": {
+        "deprecated": false,
         "security": [
           {
             "BasicAuth": []
+          },
+          {
+            "ApiKeyAuth": []
           }
-        ],
+        ]
+      }
+    },
+    "/getList": {
+      "get": {
         "tags": ["restapi"],
         "summary": "getList",
-        "description": "Descripción :: Devuelve la lista del estado de peticiones asíncronas de traducción",
+        "description": "Petición concebida para la consulta del estado de todas las peticiones de traducción solicitadas, ya sean síncronas o asíncronas. Se pueden filtrar los resultados a partir de la fecha de envío, en formato zulú, de las peticiones de órdenes de traducción.",
         "operationId": "getList",
-        "parameters": [],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/getList"
-        },
+        "parameters": [
+          {
+            "name": "projectid",
+            "in": "query",
+            "description": "Identificador de proyecto de traducción.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 98
+            }
+          },
+          {
+            "name": "sourcelang",
+            "in": "query",
+            "description": "Código de idioma origen en formato ISO-639-3.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "spa"
+            }
+          },
+          {
+            "name": "targetlang",
+            "in": "query",
+            "description": "Código de idioma destino en formato ISO-639-3.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "cat"
+            }
+          },
+          {
+            "name": "datecutoff",
+            "in": "query",
+            "description": "Fecha de corte, en el formato siguiente: YYYY-MM-DDTHH:MI:SSZ (UTC u hora Zulú).",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "example": "2024-03-21T17:48:59Z"
+            }
+          },
+          {
+            "name": "options",
+            "in": "query",
+            "description": "JSON opciones auxiliares.",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/components/responses/outList"
           },
           "400": {
             "description": "Bad Request",
+            "headers": {},
             "content": {}
           },
           "401": {
@@ -254,119 +446,111 @@
           },
           "500": {
             "description": "Internal Server Error",
+            "headers": {},
             "content": {}
           },
           "503": {
             "$ref": "#/components/responses/ServiceError"
           }
         },
-        "deprecated": false
-      }
-    },
-    "/registryStatistic": {
-      "post": {
+        "deprecated": false,
         "security": [
           {
             "BasicAuth": []
+          },
+          {
+            "ApiKeyAuth": []
           }
-        ],
-        "tags": ["restapi"],
-        "summary": "registryStatistic",
-        "description": "Descripción :: Almacena estadísticas de pedidos",
-        "operationId": "registryStatistic",
-        "parameters": [],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/registryStatistic"
-        },
-        "responses": {
-          "default": {
-            "$ref": "#/components/responses/GenericError"
-          },
-          "200": {
-            "$ref": "#/components/responses/outToken"
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {}
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ExceedLimitError"
-          },
-          "405": {
-            "$ref": "#/components/responses/MethodNotAllowed"
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {}
-          },
-          "503": {
-            "$ref": "#/components/responses/ServiceError"
-          }
-        },
-        "deprecated": false
+        ]
       }
     }
   },
   "components": {
     "schemas": {
       "ErrorResponse": {
+        "title": "ErrorResponse",
+        "description": "Respuesta con información de error",
         "type": "object",
         "properties": {
           "errorCode": {
-            "type": "integer"
+            "type": "integer",
+            "format": "int32",
+            "description": "La clave errorCode indica el código de error"
           },
           "errorDescription": {
-            "type": "string"
+            "type": "string",
+            "description": "La clave errorDescription muestra la descripción del error."
           }
+        },
+        "example": {
+          "errorCode": 401,
+          "errorDescription": "API Key no válida."
         }
       },
       "OutToken": {
-        "description": "Retorno de token",
+        "title": "OutToken",
+        "description": "Respuesta con el token generado para el archivo",
         "type": "object",
         "properties": {
           "error": {
-            "allOf": [{ "$ref": "#/components/schemas/ErrorResponse" }]
+            "$ref": "#/components/schemas/ErrorResponse"
           },
           "fileName": {
-            "type": "string"
+            "type": "string",
+            "description": "La clave filename indica el nombre del fichero"
           },
           "token": {
-            "type": "string"
+            "type": "string",
+            "description": "La clave token es una cadena de caracteres alfanuméricos generado mediante encriptación UUID que actúa como identificador único del archivo asociado a la petición de traducción asíncrona."
           }
+        },
+        "example": {
+          "error": {
+            "errorCode": 0,
+            "errorDescription": null
+          },
+          "fileName": "holaRTS.txt",
+          "token": "ccb1bad5-79af-419b-90f5-77bfb664efcb"
         }
       },
       "OutFile": {
-        "description": "Retorno de archivo",
+        "title": "OutFile",
+        "description": "Respuesta con el archivo traducido",
         "type": "object",
         "properties": {
           "error": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            ]
+            "$ref": "#/components/schemas/ErrorResponse"
           },
           "status": {
             "type": "integer",
             "format": "int32",
-            "nullable": true
+            "description": "La clave status indica el estado de la traducción"
           },
           "fileName": {
             "type": "string",
-            "nullable": true
+            "description": "La clave filename indica el nombre del fichero"
           },
           "base64": {
             "type": "string",
+            "description": "La clave base64 indica el contenido del fichero en base64 si la solicitud se encuentra en estado 20, 30 o 50",
             "nullable": true
           },
           "wordCount": {
             "type": "integer",
             "format": "int32",
+            "description": "La clave wordcount indica el número de palabras del fichero traducidas",
             "nullable": true
           }
+        },
+        "example": {
+          "error": {
+            "errorCode": 0,
+            "errorDescription": null
+          },
+          "status": 30,
+          "fileName": "FitxerPetitSiRepetitsDev.txt",
+          "base64": "Qm9uIGRpYS4NCkF2dWkgZmEgdW4gZGlhIG1vbHQgYXNzb2xlbGxhdC4NCkEgbGEgbml0IGhhIHBsb2d1dC4NCkEgbGEgbml0IGhhIHBsb2d1dC4NCkVsIGNvdHhlIMOpcyB2ZXJtZWxsIGkgbSdhZ3JhZGENCkVsIGNvdHhlIMOpcyB2ZXJtZWxsIGkgbSdhZ3JhZGENCkNvbmZpZ3VyYWNpw7MgZGVsIGZvcm1hdCBlbiBPdXRsb29rIDIwMDc=",
+          "wordCount": 38
         }
       },
       "OutList": {
@@ -374,54 +558,137 @@
         "type": "object",
         "properties": {
           "error": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ErrorResponse"
-              }
-            ]
+            "$ref": "#/components/schemas/ErrorResponse"
+          },
+          "files": {
+            "type": "array",
+            "description": "conjunto de información de archivos",
+            "items": {
+              "$ref": "#/components/schemas/File"
+            }
+          }
+        },
+        "example": {
+          "error": {
+            "errorCode": 0,
+            "errorDescription": null
+          },
+          "files": [
+            {
+              "token_5": null,
+              "token": "c5ec153d-088d-42e6-9255-d1126e2574cd",
+              "sourcelang": "spa",
+              "targetlang": "cat",
+              "filename": "holaRTS.txt",
+              "wordcount": 1,
+              "idddv4": "5000692",
+              "dateinsert": "2024-03-13T16:20:48Z",
+              "auxdata": "20240313172048_98_spa_cat_0",
+              "type": 20,
+              "projectid": 98,
+              "status": 10
+            },
+            {
+              "token_5": null,
+              "token": "c5ec153e-088d-42e6-9255-d1126e2574cd",
+              "sourcelang": "spa",
+              "targetlang": "cat",
+              "filename": "holaRTS2.txt",
+              "wordcount": 1,
+              "idddv4": "5000693",
+              "dateinsert": "2024-03-13T16:20:48Z",
+              "auxdata": "20240313172048_98_spa_cat_0",
+              "type": 20,
+              "projectid": 98,
+              "status": 20
+            }
+          ]
+        }
+      },
+      "File": {
+        "title": "File",
+        "description": "Información de archivo",
+        "type": "object",
+        "properties": {
+          "token_5": {
+            "type": "string",
+            "description": "La clave token es una cadena de caracteres alfanuméricos generado mediante encriptación desde el sistema de ATLS Global SL que actúa como identificador único del archivo asociado a la petición de traducción asíncrona.",
+            "nullable": true
+          },
+          "token": {
+            "type": "string",
+            "description": "La clave token es una cadena de caracteres alfanuméricos generado mediante encriptación UUID que actúa como identificador único del archivo asociado a la petición de traducción asíncrona.",
+            "nullable": true
+          },
+          "sourcelang": {
+            "type": "string",
+            "description": "La clave sourcelang es un código de idioma origen en formato ISO-639-3"
+          },
+          "targetlang": {
+            "type": "string",
+            "description": "La clave targetlang es un código de idioma destino en formato ISO-639-3"
+          },
+          "filename": {
+            "type": "string",
+            "description": "La clave filename indica el nombre del fichero"
+          },
+          "wordcount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "La clave wordcount indica el número de palabras del fichero traducidas"
+          },
+          "idddv4": {
+            "type": "string",
+            "description": "La clave idddv4 indica el identificador interno"
+          },
+          "dateinsert": {
+            "type": "string",
+            "format": "date-time",
+            "description": "La clave dateinsert indica el fecha de inserción del archivo"
+          },
+          "auxdata": {
+            "type": "string",
+            "description": "La clave auxdata indica valores auxiliares"
+          },
+          "type": {
+            "type": "integer",
+            "format": "int32",
+            "description": "La clave type indica Como se ha pedido la traducción, síncrona o asíncrona"
+          },
+          "projectid": {
+            "type": "integer",
+            "format": "int32",
+            "description": "La clave projectid indica el identificador de proyecto de traducción"
           },
           "status": {
             "type": "integer",
             "format": "int32",
-            "nullable": true
-          },
-          "fileName": {
-            "type": "string",
-            "nullable": true
-          },
-          "base64": {
-            "type": "string",
-            "nullable": true
-          },
-          "wordCount": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "description": "La clave status indica el estado de la traducción"
           }
+        },
+        "example": {
+          "token_5": null,
+          "token": "c5ec153d-088d-42e6-9255-d1126e2574cd",
+          "sourcelang": "spa",
+          "targetlang": "cat",
+          "filename": "holaRTS.txt",
+          "wordcount": 1,
+          "idddv4": "5000692",
+          "dateinsert": "2024-03-13T16:20:48Z",
+          "auxdata": "20240313172048_98_spa_cat_0",
+          "type": 20,
+          "projectid": 98,
+          "status": 10
         }
       }
     },
     "responses": {
-      "GenericError": {
-        "description": "An error occurred.",
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "error": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
       "UnauthorizedError": {
-        "description": "Unauthorized",
+        "description": "Resposta de Error Unauthorized",
         "content": {
           "application/json": {
             "schema": {
+              "description": "Resposta de Error Unauthorized",
               "type": "object",
               "properties": {
                 "error": {
@@ -453,10 +720,29 @@
         }
       },
       "MethodNotAllowed": {
-        "description": "Method Not Allowed"
+        "description": "Method Not Allowed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "description": "Resposta de Error Metodo no permitido",
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "errorCode": 405,
+                "errorDescription": "Method Not Allowed"
+              }
+            }
+          }
+        }
       },
       "ServiceError": {
-        "description": "Method Not Allowed",
+        "description": "Service unavaiable",
         "content": {
           "application/json": {
             "schema": {
@@ -519,7 +805,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "allOf": [{ "$ref": "#/components/schemas/OutList" }]
+              "$ref": "#/components/schemas/OutList"
             },
             "example": {
               "error": {
@@ -531,16 +817,43 @@
             }
           }
         }
+      },
+      "outPing": {
+        "description": "Successful Response",
+        "headers": {},
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "version": {
+                  "type": "string",
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "error": {
+                "errorCode": 0,
+                "errorDescription": null
+              },
+              "version": "Webservice SOAP|REST AT-RTS 5.6.0"
+            }
+          }
+        }
       }
     },
     "requestBodies": {
       "translateSync": {
-        "description": "Ejemplo de traducción automatica sincrona",
+        "description": "Ejemplo de traducción automatica síncrona",
         "required": true,
         "content": {
           "application/json": {
             "schema": {
-              "title": "TradSync",
+              "title": "translateSync",
               "type": "object",
               "required": [
                 "projectid",
@@ -552,25 +865,34 @@
               "properties": {
                 "projectid": {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "description": "Identificador de proyecto de traducción."
                 },
                 "sourcelang": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Código de idioma origen en formato ISO-639-3."
                 },
                 "targetlang": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Código de idioma destino en formato ISO-639-3."
                 },
                 "filename": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Nombre del archivo."
                 },
                 "base64": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Contenido del archivo a traducir, codificado en base64."
                 },
                 "encoding": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Codificación del archivo. Por defecto se aplicará UTF-8.",
+                  "nullable": true
                 },
                 "options": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "JSON opciones auxiliares.",
+                  "nullable": true
                 }
               }
             }
@@ -583,7 +905,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "title": "TradAsync",
+              "title": "translateAsync",
               "type": "object",
               "required": [
                 "projectid",
@@ -595,31 +917,44 @@
               "properties": {
                 "projectid": {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "description": "Identificador de proyecto de traducción."
                 },
                 "sourcelang": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Código de idioma origen en formato ISO-639-3."
                 },
                 "targetlang": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Código de idioma destino en formato ISO-639-3."
                 },
                 "filename": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Nombre del archivo."
                 },
                 "base64": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Contenido del archivo a traducir, codificado en base64."
                 },
                 "encoding": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Codificación del archivo. Por defecto se aplicará UTF-8.",
+                  "nullable": true
                 },
                 "callbackurl": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "URL de callback para automatizar el retorno de la traducción. A esta URL se le añadirá el token de la petición al final.",
+                  "nullable": true
                 },
                 "errnotifiersendto": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Correo electrónico para mandar una notificación si no se puede entregar la traducció",
+                  "nullable": true
                 },
                 "options": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "JSON opciones auxiliares.",
+                  "nullable": true
                 }
               }
             }
@@ -638,13 +973,18 @@
               "properties": {
                 "projectid": {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "description": "Identificador de proyecto de traducción."
                 },
                 "token": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 70,
+                  "description": "Token resultado de la petición de traducción asíncrona."
                 },
                 "options": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "JSON opciones auxiliares.",
+                  "nullable": true
                 }
               }
             }
@@ -653,106 +993,30 @@
       },
       "delFileByToken": {
         "description": "Información de documento a eliminar",
+        "required": true,
         "content": {
           "application/json": {
             "schema": {
+              "title": "delFileByToken",
+              "required": ["projectid", "token"],
               "type": "object",
               "properties": {
                 "projectid": {
                   "type": "integer",
                   "format": "int32",
+                  "description": "Identificador de proyecto de traducción.",
                   "example": 98
                 },
                 "token": {
                   "type": "string",
                   "maxLength": 70,
+                  "description": "Token resultado de la petición de traducción asíncrona.",
                   "example": "7@+cOnoXwN9MF2YWtmgDkp70zTrzRBfN4ekuBaAg9ghS7LSlnS7NpAJAu5JtcziN70"
                 },
                 "options": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "required": true
-      },
-      "getList": {
-        "description": "Información de documento a eliminar",
-        "content": {
-          "application/json": {
-            "schema": {
-              "title": "getList",
-              "required": [
-                "projectid",
-                "sourcelang",
-                "targetlang",
-                "datecutoff",
-                "options"
-              ],
-              "type": "object",
-              "properties": {
-                "projectid": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "sourcelang": {
-                  "type": "string"
-                },
-                "targetlang": {
-                  "type": "string"
-                },
-                "datecutoff": {
                   "type": "string",
-                  "format": "date-time"
-                },
-                "options": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      },
-      "registryStatistic": {
-        "description": "Información de documento a eliminar",
-        "content": {
-          "application/json": {
-            "schema": {
-              "required": [
-                "projectid",
-                "orderid",
-                "sourcelang",
-                "targetlang",
-                "filename",
-                "wordcount",
-                "options"
-              ],
-              "type": "object",
-              "properties": {
-                "projectid": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "orderid": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "sourcelang": {
-                  "type": "string"
-                },
-                "targetlang": {
-                  "type": "string"
-                },
-                "filename": {
-                  "type": "string"
-                },
-                "wordcount": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "options": {
-                  "type": "string"
+                  "description": "JSON opciones auxiliares.",
+                  "nullable": true
                 }
               }
             }
@@ -764,6 +1028,11 @@
       "BasicAuth": {
         "type": "http",
         "scheme": "basic"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-ATRTS-API-Key"
       }
     }
   },
